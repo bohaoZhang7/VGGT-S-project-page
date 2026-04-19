@@ -30,10 +30,42 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <script defer src="static/js/index.js"></script>
   <script defer src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
 <body>
+  <nav class="page-nav" aria-label="Page sections">
+    <div class="page-nav-inner">
+      <a href="#top" class="page-nav-brand">
+        <img src="cologo/cologo.png" alt="Colalab logo">
+        <span>Project Page</span>
+      </a>
+      <div class="page-nav-links">
+        <a href="#overview" data-nav-link>Overview</a>
+        <a href="#model" data-nav-link>Model</a>
+        <a href="#data" data-nav-link>Data</a>
+        <a href="#results" data-nav-link>Results</a>
+        <a href="#citation" data-nav-link>Citation</a>
+      </div>
+    </div>
+    <div class="reading-progress" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+  </nav>
+
   <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 5l-7 7 1.4 1.4 4.6-4.6V19h2V8.8l4.6 4.6L19 12z"></path>
@@ -41,7 +73,7 @@
   </button>
 
   <main>
-    <section class="project-hero" data-hero>
+    <section class="project-hero" id="top" data-hero>
       <div class="hero-bubbles" aria-hidden="true">
         <span class="bubble bubble-1"></span>
         <span class="bubble bubble-2"></span>
@@ -207,7 +239,7 @@
       </div>
     </section>
 
-    <section class="section content-section">
+    <section class="section content-section" id="overview">
       <div class="container content-wide">
         <p class="lead-paragraph">
           We introduce <strong>Project Title</strong>, our placeholder effort for building an open-source, widely applicable
@@ -215,7 +247,62 @@
           results while keeping the title, authors, figures, and links easy to replace with your own project details.
         </p>
 
-        <img src="static/images/carousel1.jpg" alt="Project teaser image" class="teaser-image">
+        <div class="method-diagram-scroll" data-method-diagram>
+          <div class="method-diagram-stage" aria-label="Interactive method diagram">
+            <div class="method-node method-node-data is-active" data-method-node="data">
+              <span class="method-node-kicker">01</span>
+              <strong>Data</strong>
+              <span>Curated demonstrations, task metadata, and multimodal observations.</span>
+            </div>
+            <div class="method-node method-node-model" data-method-node="model">
+              <span class="method-node-kicker">02</span>
+              <strong>Model</strong>
+              <span>Shared policy backbone that aligns perception, language, and actions.</span>
+            </div>
+            <div class="method-node method-node-deployment" data-method-node="deployment">
+              <span class="method-node-kicker">03</span>
+              <strong>Deployment</strong>
+              <span>Task-conditioned execution across new scenes and robot setups.</span>
+            </div>
+            <div class="method-node method-node-feedback" data-method-node="feedback">
+              <span class="method-node-kicker">04</span>
+              <strong>Feedback</strong>
+              <span>Evaluation signals and user corrections feed the next training round.</span>
+            </div>
+
+            <svg class="method-links" viewBox="0 0 1000 520" aria-hidden="true">
+              <path class="method-link method-link-data" data-method-link="data" d="M360 148 C450 98 550 98 640 148"></path>
+              <path class="method-link method-link-model" data-method-link="model" d="M750 220 C792 248 792 296 750 324"></path>
+              <path class="method-link method-link-deployment" data-method-link="deployment" d="M640 392 C550 442 450 442 360 392"></path>
+              <path class="method-link method-link-feedback" data-method-link="feedback" d="M250 324 C208 296 208 248 250 220"></path>
+            </svg>
+          </div>
+
+          <div class="method-steps-viewport" aria-label="Method steps">
+            <div class="method-scroll-steps" data-method-track>
+              <article class="method-step is-active" data-method-step="data">
+                <span>Step 1</span>
+                <h3>Data</h3>
+                <p>Start with diverse demonstrations and structured metadata that describe the scene, task intent, and expected behavior.</p>
+              </article>
+              <article class="method-step" data-method-step="model">
+                <span>Step 2</span>
+                <h3>Model</h3>
+                <p>Train a unified model that transforms observations and task prompts into robust, reusable action representations.</p>
+              </article>
+              <article class="method-step" data-method-step="deployment">
+                <span>Step 3</span>
+                <h3>Deployment</h3>
+                <p>Deploy the policy to new environments, where it conditions on the current task and adapts to visual and physical variation.</p>
+              </article>
+              <article class="method-step" data-method-step="feedback">
+                <span>Step 4</span>
+                <h3>Feedback</h3>
+                <p>Collect failures, human corrections, and evaluation metrics, then feed them back into the next iteration of the system.</p>
+              </article>
+            </div>
+          </div>
+        </div>
 
         <div class="video-embed-wrap">
           <iframe
@@ -240,7 +327,105 @@
           This placeholder block should eventually describe your architecture, input modalities, output space, and why
           the method is broadly useful.
         </p>
-        <img src="static/images/carousel2.jpg" alt="Model overview figure" class="section-figure section-figure-wide">
+
+        <div class="model-architecture" data-model-architecture>
+          <div class="model-architecture-header">
+            <div>
+              <span class="eyebrow-label">Mode consistency architecture</span>
+              <h3>Replaceable model system diagram</h3>
+            </div>
+            <p>
+              Left: expert demonstration collection. Middle: model arithmetic. Right: real-robot inference. Bottom:
+              DAgger feedback and stage advantage from on-policy experience.
+            </p>
+          </div>
+
+          <div class="model-architecture-canvas system-architecture" role="img" aria-label="Mode consistency system architecture diagram">
+            <svg class="system-architecture-lines" viewBox="0 0 1200 560" aria-hidden="true">
+              <path class="system-line system-line-main system-line-data" d="M276 170 H336"></path>
+              <path class="system-line system-line-main system-line-inference" d="M864 170 H924"></path>
+              <path class="system-line system-line-green" d="M162 330 C162 392 262 438 356 460"></path>
+              <path class="system-line system-line-green" d="M596 460 H640"></path>
+              <path class="system-line system-line-feedback" d="M874 460 C984 450 1038 392 1038 330"></path>
+            </svg>
+
+            <section class="system-panel system-panel-train">
+              <div class="system-panel-heading">
+                <span class="system-formula">\(P_{\mathrm{train}}\)</span>
+                <span>Expert Data</span>
+              </div>
+              <div class="system-mini-plot" aria-hidden="true">
+                <svg viewBox="0 0 160 96">
+                  <path d="M18 72 C42 30 70 28 92 34 C118 42 128 24 142 16"></path>
+                </svg>
+              </div>
+            </section>
+
+            <section class="system-panel system-panel-model">
+              <div class="system-panel-heading">
+                <span class="system-formula">\(Q_{\mathrm{model}}\)</span>
+                <span>Model Arithmetic</span>
+              </div>
+              <svg class="system-model-lines" viewBox="0 0 390 184" aria-hidden="true">
+                <defs>
+                  <marker id="system-arrow-src" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3" markerHeight="3" orient="auto-start-reverse">
+                    <path d="M0 0 L10 5 L0 10 Z"></path>
+                  </marker>
+                  <marker id="system-arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3" markerHeight="3" orient="auto-start-reverse">
+                    <path d="M0 0 L10 5 L0 10 Z"></path>
+                  </marker>
+                </defs>
+                <path class="system-line system-line-src" d="M89 61 H104"></path>
+                <path class="system-line system-line-src" d="M89 123 H104"></path>
+                <path class="system-line system-line-purple" d="M180 61 C214 61 226 92 253 92"></path>
+                <path class="system-line system-line-purple system-line-delay" d="M180 123 C214 123 226 92 253 92"></path>
+              </svg>
+              <div class="system-model-grid">
+                <div class="system-stack">
+                  <span>SRC 1</span>
+                  <span>SRC 2</span>
+                </div>
+                <div class="system-stack system-stack-q">
+                  <span>\(Q_1\)</span>
+                  <span>\(Q_2\)</span>
+                </div>
+                <div class="system-plus">+</div>
+                <div class="system-mix">
+                  <span class="system-formula">\(Q_{\mathrm{mix}}\)</span>
+                  <small>Arithmetic</small>
+                </div>
+              </div>
+            </section>
+
+            <section class="system-panel system-panel-test">
+              <div class="system-panel-heading">
+                <span class="system-formula">\(P_{\mathrm{test}}\)</span>
+                <span>Deployment</span>
+              </div>
+              <div class="system-mini-plot" aria-hidden="true">
+                <svg viewBox="0 0 160 96">
+                  <path d="M20 72 C42 34 70 26 96 34 C118 42 126 24 142 18"></path>
+                </svg>
+              </div>
+            </section>
+
+            <div class="system-chip system-chip-advantage">
+              <span>Stage Advantage</span>
+              <small>\(\hat{A}_t = r_t + \gamma V(s_{t+1}) - V(s_t)\)</small>
+            </div>
+            <div class="system-chip system-chip-feedback">
+              <span>DAgger Feedback</span>
+              <small>\(\mathcal{D}_{t+1} \leftarrow \mathcal{D}_t \cup \tau_{\pi}\)</small>
+            </div>
+          </div>
+
+          <div class="model-architecture-legend">
+            <span><i class="legend-dot legend-dot-data"></i>Data collection</span>
+            <span><i class="legend-dot legend-dot-model"></i>Model training</span>
+            <span><i class="legend-dot legend-dot-deploy"></i>Inference</span>
+            <span><i class="legend-dot legend-dot-feedback"></i>Feedback</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -252,7 +437,17 @@
           your project is not primarily data-centric, it can easily become a training pipeline or system setup section.
           The structure here uses compact prose followed by a single supporting figure for fast scanning.
         </p>
-        <img src="static/images/carousel3.jpg" alt="Dataset overview figure" class="section-figure section-figure-narrow">
+        <div class="interactive-data-panel">
+          <div class="interactive-panel-copy">
+            <span class="eyebrow-label">Interactive embedding</span>
+            <h3>3D t-SNE / scatter visualization</h3>
+            <p>
+              Rotate, zoom, and inspect placeholder clusters that represent dataset sources, model rollouts, and
+              held-out evaluation trajectories. Replace this synthetic data with your own embedding coordinates.
+            </p>
+          </div>
+          <div id="tsne-plot" class="tsne-plot" aria-label="Interactive 3D scatter plot"></div>
+        </div>
       </div>
     </section>
 
@@ -265,7 +460,72 @@
           from. The tables below use a compact black-rule academic style for dense quantitative comparison.
         </p>
 
-        <img src="static/images/carousel4.jpg" alt="Results figure" class="section-figure section-figure-wide">
+        <div class="metrics-dashboard" data-metrics-dashboard>
+          <div class="metrics-header">
+            <div>
+              <span class="eyebrow-label">Benchmarks</span>
+              <h3>Interactive metric comparison</h3>
+            </div>
+            <div class="metric-tabs" role="tablist" aria-label="Metric datasets">
+              <button class="metric-tab is-active" type="button" data-metric-tab="success">Success</button>
+              <button class="metric-tab" type="button" data-metric-tab="generalization">Generalization</button>
+              <button class="metric-tab" type="button" data-metric-tab="efficiency">Efficiency</button>
+            </div>
+          </div>
+          <div class="metric-chart" data-metric-chart aria-label="Metric bar chart"></div>
+        </div>
+
+        <div class="demo-gallery" data-demo-gallery>
+          <div class="demo-gallery-copy">
+            <span class="eyebrow-label">Demo gallery</span>
+            <h3>Qualitative rollouts</h3>
+            <p>Use the controls to switch between representative demos, rollout views, and failure cases.</p>
+          </div>
+          <div class="demo-gallery-stage">
+            <button class="demo-gallery-arrow demo-gallery-prev" type="button" aria-label="Previous demo" data-demo-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15.4 4.6 8 12l7.4 7.4-1.4 1.4L5.2 12 14 3.2z"></path>
+              </svg>
+            </button>
+            <div class="demo-gallery-viewport">
+              <div class="demo-gallery-track" data-demo-track>
+                <article class="demo-card is-active" data-demo-card>
+                  <video autoplay muted loop playsinline preload="metadata">
+                    <source src="static/videos/carousel1.mp4" type="video/mp4">
+                  </video>
+                  <div class="demo-card-caption">
+                    <span>Demo 1</span>
+                    <strong>Generalist rollout</strong>
+                  </div>
+                </article>
+                <article class="demo-card" data-demo-card>
+                  <video autoplay muted loop playsinline preload="metadata">
+                    <source src="static/videos/carousel2.mp4" type="video/mp4">
+                  </video>
+                  <div class="demo-card-caption">
+                    <span>Demo 2</span>
+                    <strong>Long-horizon execution</strong>
+                  </div>
+                </article>
+                <article class="demo-card" data-demo-card>
+                  <video autoplay muted loop playsinline preload="metadata">
+                    <source src="static/videos/carousel3.mp4" type="video/mp4">
+                  </video>
+                  <div class="demo-card-caption">
+                    <span>Demo 3</span>
+                    <strong>Out-of-distribution scene</strong>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <button class="demo-gallery-arrow demo-gallery-next" type="button" aria-label="Next demo" data-demo-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m8.6 19.4 7.4-7.4-7.4-7.4L10 3.2 18.8 12 10 20.8z"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="demo-gallery-dots" data-demo-dots></div>
+        </div>
 
         <div class="tables-wrap">
           <table class="results-table results-table-compact">
