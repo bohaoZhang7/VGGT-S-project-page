@@ -1,3 +1,87 @@
+const PROJECT_CONFIG = window.ProjectPageConfig || {};
+
+function getProjectConfig() {
+  return PROJECT_CONFIG;
+}
+
+function getThemePalette() {
+  const isDark = document.documentElement.dataset.theme === "dark";
+  return {
+    isDark,
+    text: isDark ? "#ffffff" : "#000000",
+    muted: isDark ? "#f5f5f5" : "#404040",
+    line: isDark ? "rgba(255, 255, 255, 0.24)" : "rgba(0, 0, 0, 0.16)",
+    grid: isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(0, 0, 0, 0.12)",
+    panel: "rgba(0,0,0,0)",
+    plot: "rgba(0,0,0,0)"
+  };
+}
+
+function getSystemTheme() {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function setupThemeToggle(themeConfig = {}) {
+  const button = document.querySelector("[data-theme-toggle]");
+  const storageKey = themeConfig.storageKey || "colalab-project-theme";
+  const defaultMode = themeConfig.defaultMode || "system";
+  const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function readSavedTheme() {
+    try {
+      return window.localStorage.getItem(storageKey);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeSavedTheme(theme) {
+    try {
+      window.localStorage.setItem(storageKey, theme);
+    } catch (error) {}
+  }
+
+  function resolveTheme() {
+    const savedTheme = readSavedTheme();
+    if (savedTheme === "light" || savedTheme === "dark") {
+      return savedTheme;
+    }
+    return defaultMode === "dark" ? "dark" : defaultMode === "light" ? "light" : getSystemTheme();
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    if (button) {
+      button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+      button.setAttribute("title", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+    window.dispatchEvent(new CustomEvent("project-theme-change", { detail: { theme } }));
+  }
+
+  if (button) {
+    button.addEventListener("click", () => {
+      const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      writeSavedTheme(nextTheme);
+      applyTheme(nextTheme);
+    });
+  }
+
+  if (media) {
+    const handleSystemThemeChange = () => {
+      if (!readSavedTheme()) {
+        applyTheme(resolveTheme());
+      }
+    };
+    if (media.addEventListener) {
+      media.addEventListener("change", handleSystemThemeChange);
+    } else if (media.addListener) {
+      media.addListener(handleSystemThemeChange);
+    }
+  }
+
+  applyTheme(resolveTheme());
+}
+
 function copyBibTeX() {
   const bibtexElement = document.getElementById("bibtex-code");
   const button = document.querySelector(".copy-bibtex-btn");
@@ -38,6 +122,8 @@ function resetPageToHero() {
   window.scrollTo(0, 0);
   document.body.classList.remove("hero-collapsed");
   document.body.classList.remove("page-nav-visible");
+  document.body.classList.remove("logo-flight-active");
+  document.querySelectorAll(".hero-logo-flyer").forEach((flyer) => flyer.remove());
   const hero = document.querySelector("[data-hero]");
   if (hero) {
     hero.classList.remove("is-collapsed");
@@ -77,6 +163,68 @@ function setupPageNavigation() {
   updateNavigationState();
   window.addEventListener("scroll", updateNavigationState, { passive: true });
   window.addEventListener("resize", updateNavigationState);
+}
+
+function setupAutoplayCarousel(root, options = {}) {
+  if (!root || typeof options.onAdvance !== "function") {
+    return;
+  }
+
+  const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReducedMotion) {
+    return;
+  }
+
+  const config = getProjectConfig();
+  const configuredInterval = Number(root.dataset.autoplayInterval || options.interval || config.demoAutoplayInterval);
+  const interval = Number.isFinite(configuredInterval) && configuredInterval > 0 ? configuredInterval : 6000;
+  let timer = null;
+  let pausedByUser = false;
+
+  function stop() {
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function start() {
+    stop();
+    if (!pausedByUser) {
+      timer = window.setInterval(options.onAdvance, interval);
+    }
+  }
+
+  function pause() {
+    pausedByUser = true;
+    stop();
+  }
+
+  function resume() {
+    pausedByUser = false;
+    start();
+  }
+
+  root.addEventListener("mouseenter", pause);
+  root.addEventListener("mouseleave", resume);
+  root.addEventListener("focusin", pause);
+  root.addEventListener("focusout", resume);
+  root.addEventListener("pointerdown", pause);
+  root.addEventListener("keyup", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "Enter" || event.key === " ") {
+      pause();
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stop();
+    } else {
+      start();
+    }
+  });
+
+  start();
 }
 
 function setupMediaCarousel() {
@@ -157,6 +305,12 @@ function setupMediaCarousel() {
 
   window.addEventListener("resize", recalcCarousel);
   recalcCarousel();
+  setupAutoplayCarousel(carousel, {
+    onAdvance: () => {
+      currentIndex = currentIndex === maxIndex ? 0 : currentIndex + 1;
+      updateCarousel();
+    }
+  });
 }
 
 function setupHeroCollapse() {
@@ -168,6 +322,91 @@ function setupHeroCollapse() {
   const collapseThreshold = 100;
   let lockedCollapsed = false;
   let hasActivatedCollapseTracking = false;
+  let hasAnimatedLogo = false;
+
+  function getNavLogoFlightTarget() {
+    const navInner = document.querySelector(".page-nav-inner");
+    const target = document.querySelector(".page-nav-brand img");
+    if (!target || !target.getBoundingClientRect) {
+      return null;
+    }
+
+    const targetBox = target.getBoundingClientRect();
+    if (targetBox.width > 0 && targetBox.height > 0) {
+      return targetBox;
+    }
+
+    const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+    const width = window.innerWidth <= 768 ? 2 * rootFontSize : 2.25 * rootFontSize;
+    const navBox = navInner ? navInner.getBoundingClientRect() : { left: 0, top: 0 };
+    const left = navBox.left + rootFontSize;
+    const top = (window.innerWidth <= 768 ? 0.7 * rootFontSize : 0.875 * rootFontSize);
+    return {
+      left,
+      top,
+      width,
+      height: width
+    };
+  }
+
+  function animateHeroLogoToNav() {
+    if (hasAnimatedLogo) {
+      return;
+    }
+
+    const source = hero.querySelector(".hero-logo-image");
+    if (!source || !source.getBoundingClientRect) {
+      return;
+    }
+
+    const start = source.getBoundingClientRect();
+    if (start.width <= 0 || start.height <= 0) {
+      return;
+    }
+
+    hasAnimatedLogo = true;
+    document.body.classList.add("logo-flight-active");
+    const end = getNavLogoFlightTarget();
+    if (!end) {
+      document.body.classList.remove("logo-flight-active");
+      return;
+    }
+
+    const flyer = new Image();
+    flyer.src = source.currentSrc || source.src;
+    flyer.alt = "";
+    flyer.className = "hero-logo-flyer";
+    flyer.style.left = `${start.left}px`;
+    flyer.style.top = `${start.top}px`;
+    flyer.style.width = `${start.width}px`;
+    flyer.style.height = `${start.height}px`;
+    document.body.appendChild(flyer);
+
+    const dx = end.left - start.left;
+    const dy = end.top - start.top;
+    const scale = Math.max(0.05, end.width / start.width);
+
+    const finish = () => {
+      flyer.remove();
+      document.body.classList.remove("logo-flight-active");
+    };
+
+    if (flyer.animate) {
+      const animation = flyer.animate([
+        { transform: "translate3d(0, 0, 0) scale(1)", opacity: 1, offset: 0 },
+        { transform: `translate3d(${dx * 0.55}px, ${dy * 0.25 - 24}px, 0) scale(${Math.max(scale * 1.8, 0.28)})`, opacity: 0.96, offset: 0.58 },
+        { transform: `translate3d(${dx}px, ${dy}px, 0) scale(${scale})`, opacity: 0, offset: 1 }
+      ], {
+        duration: 760,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        fill: "forwards"
+      });
+      animation.addEventListener("finish", finish, { once: true });
+      animation.addEventListener("cancel", finish, { once: true });
+    } else {
+      finish();
+    }
+  }
 
   function updateHeroState() {
     if (hasActivatedCollapseTracking && window.scrollY > collapseThreshold) {
@@ -175,6 +414,10 @@ function setupHeroCollapse() {
     }
 
     const collapsed = lockedCollapsed;
+    const wasCollapsed = hero.classList.contains("is-collapsed");
+    if (collapsed && !wasCollapsed) {
+      animateHeroLogoToNav();
+    }
     hero.classList.toggle("is-collapsed", collapsed);
     document.body.classList.toggle("hero-collapsed", collapsed);
   }
@@ -375,48 +618,51 @@ function setupTsnePlot() {
     makeCluster("Failure cases", "#f59e0b", 1.35, -0.45, -0.5)
   ];
 
-  const layout = {
+  function makeLayout() {
+    const palette = getThemePalette();
+    return {
     margin: { l: 0, r: 0, t: 0, b: 0 },
-    paper_bgcolor: "rgba(255,255,255,0)",
-    plot_bgcolor: "rgba(255,255,255,0)",
+    paper_bgcolor: palette.panel,
+    plot_bgcolor: palette.plot,
     legend: {
       x: 0.02,
       y: 0.98,
-      bgcolor: "rgba(255,255,255,0.78)",
-      bordercolor: "#e2e8f0",
+      font: { color: palette.text },
+      bgcolor: palette.isDark ? "rgba(15,23,42,0.78)" : "rgba(255,255,255,0.78)",
+      bordercolor: palette.line,
       borderwidth: 1
     },
     scene: {
-      bgcolor: "rgba(248,250,252,0.82)",
+      bgcolor: palette.isDark ? "rgba(15,23,42,0.82)" : "rgba(248,250,252,0.82)",
       xaxis: {
-        title: { text: "t-SNE 1", font: { color: "#334155", size: 12 } },
+        title: { text: "t-SNE 1", font: { color: palette.text, size: 12 } },
         showgrid: true,
-        gridcolor: "#dbe4ef",
+        gridcolor: palette.grid,
         showline: true,
-        linecolor: "#64748b",
+        linecolor: palette.muted,
         zeroline: true,
-        zerolinecolor: "#94a3b8",
-        tickfont: { color: "#64748b", size: 10 }
+        zerolinecolor: palette.muted,
+        tickfont: { color: palette.muted, size: 10 }
       },
       yaxis: {
-        title: { text: "t-SNE 2", font: { color: "#334155", size: 12 } },
+        title: { text: "t-SNE 2", font: { color: palette.text, size: 12 } },
         showgrid: true,
-        gridcolor: "#dbe4ef",
+        gridcolor: palette.grid,
         showline: true,
-        linecolor: "#64748b",
+        linecolor: palette.muted,
         zeroline: true,
-        zerolinecolor: "#94a3b8",
-        tickfont: { color: "#64748b", size: 10 }
+        zerolinecolor: palette.muted,
+        tickfont: { color: palette.muted, size: 10 }
       },
       zaxis: {
-        title: { text: "t-SNE 3", font: { color: "#334155", size: 12 } },
+        title: { text: "t-SNE 3", font: { color: palette.text, size: 12 } },
         showgrid: true,
-        gridcolor: "#dbe4ef",
+        gridcolor: palette.grid,
         showline: true,
-        linecolor: "#64748b",
+        linecolor: palette.muted,
         zeroline: true,
-        zerolinecolor: "#94a3b8",
-        tickfont: { color: "#64748b", size: 10 }
+        zerolinecolor: palette.muted,
+        tickfont: { color: palette.muted, size: 10 }
       },
       aspectmode: "cube",
       camera: {
@@ -424,14 +670,22 @@ function setupTsnePlot() {
       }
     }
   };
+  }
 
-  window.Plotly.newPlot(plot, traces, layout, {
+  window.Plotly.newPlot(plot, traces, makeLayout(), {
     responsive: true,
     displayModeBar: false
   });
+
+  window.addEventListener("project-theme-change", () => {
+    window.Plotly.react(plot, traces, makeLayout(), {
+      responsive: true,
+      displayModeBar: false
+    });
+  });
 }
 
-function setupMetricsDashboard() {
+function setupMetricsDashboard(horizontalMetrics) {
   const dashboard = document.querySelector("[data-metrics-dashboard]");
   if (!dashboard) {
     return;
@@ -439,7 +693,7 @@ function setupMetricsDashboard() {
 
   const chart = dashboard.querySelector("[data-metric-chart]");
   const tabs = Array.from(dashboard.querySelectorAll("[data-metric-tab]"));
-  const datasets = {
+  const datasets = horizontalMetrics || {
     success: [
       ["Baseline 1", 42, "#64748b", "#94a3b8", "rgba(100, 116, 139, 0.13)"],
       ["Baseline 2", 58, "#7c3aed", "#a78bfa", "rgba(124, 58, 237, 0.12)"],
@@ -479,6 +733,283 @@ function setupMetricsDashboard() {
   });
 
   renderMetric("success");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function setupVerticalCharts(verticalCharts) {
+  const panel = document.querySelector("[data-vertical-results]");
+  const grid = document.querySelector("[data-vertical-charts]");
+  const prev = document.querySelector("[data-vertical-prev]");
+  const next = document.querySelector("[data-vertical-next]");
+  const progress = document.querySelector("[data-vertical-progress]");
+  const charts = Array.isArray(verticalCharts) ? verticalCharts : [];
+  if (!panel || !grid || charts.length === 0) {
+    if (panel) {
+      panel.hidden = true;
+    }
+    return;
+  }
+
+  let activeIndex = 0;
+  let dots = [];
+
+  function makeChartLayout(chart) {
+    const palette = getThemePalette();
+    return {
+      margin: { t: 14, r: 12, b: 72, l: 58 },
+      paper_bgcolor: palette.panel,
+      plot_bgcolor: palette.plot,
+      barmode: "group",
+      barcornerradius: 7,
+      bargap: 0.28,
+      bargroupgap: 0.12,
+      hovermode: "closest",
+      showlegend: true,
+      legend: {
+        orientation: "h",
+        x: 0,
+        y: -0.18,
+        font: { color: palette.muted, size: 11 }
+      },
+      xaxis: {
+        title: { text: chart.xAxisTitle || "", font: { color: palette.muted, size: 11 } },
+        tickfont: { color: palette.muted, size: 11 },
+        showline: false,
+        zeroline: false,
+        showgrid: false
+      },
+      yaxis: {
+        title: { text: chart.yAxisTitle || chart.unit || "", font: { color: palette.muted, size: 11 } },
+        tickfont: { color: palette.muted, size: 11 },
+        showline: false,
+        zeroline: false,
+        gridcolor: palette.grid,
+        rangemode: "tozero"
+      },
+      font: {
+        color: palette.text,
+        family: (getProjectConfig().contentTokens && getProjectConfig().contentTokens.fontFamily) || "Inter, sans-serif"
+      }
+    };
+  }
+
+  function makeChartData(chart) {
+    return (chart.series || []).map((series) => {
+      return {
+        type: "bar",
+        name: series.name,
+        x: chart.categories,
+        y: series.values,
+        marker: {
+          color: series.color,
+          opacity: series.highlight ? 0.98 : 0.78,
+          line: {
+            color: getThemePalette().isDark ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.78)",
+            width: series.highlight ? 1.2 : 0
+          }
+        },
+        customdata: chart.categories.map((category) => [category, chart.unit || ""]),
+        hovertemplate: "<b>%{fullData.name}</b><br>%{customdata[0]}: %{y}%{customdata[1]}<extra></extra>"
+      };
+    });
+  }
+
+  function renderFallbackChart(container, chart) {
+    const maxValue = Math.max(1, ...chart.series.flatMap((series) => series.values));
+    container.innerHTML = `
+      <div class="vertical-fallback-chart" role="img" aria-label="${escapeHtml(chart.title)}">
+        <div class="vertical-fallback-bars">
+          ${chart.categories.map((category, categoryIndex) => `
+            <div class="vertical-fallback-group">
+              <div class="vertical-fallback-stack">
+                ${chart.series.map((series) => {
+                  const value = series.values[categoryIndex] || 0;
+                  const height = Math.max(3, (value / maxValue) * 100);
+                  return `
+                    <span
+                      class="vertical-fallback-bar${series.highlight ? " is-highlight" : ""}"
+                      style="--bar-color:${series.color};--bar-height:${height}%;"
+                      title="${escapeHtml(series.name)} / ${escapeHtml(category)}: ${escapeHtml(value)}${escapeHtml(chart.unit || "")}">
+                    </span>
+                  `;
+                }).join("")}
+              </div>
+              <span class="vertical-fallback-label">${escapeHtml(category)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCharts() {
+    grid.innerHTML = "";
+    charts.forEach((chart) => {
+      const card = document.createElement("article");
+      card.className = "vertical-chart-card";
+      card.innerHTML = `
+        <div class="vertical-chart-title-row">
+          <h4>${escapeHtml(chart.title)}</h4>
+        </div>
+        <div class="vertical-chart-plot" id="vertical-chart-${escapeHtml(chart.id)}" aria-label="${escapeHtml(chart.title)}"></div>
+        ${chart.caption ? `<p class="vertical-chart-caption">${escapeHtml(chart.caption)}</p>` : ""}
+      `;
+      grid.appendChild(card);
+
+      const plot = card.querySelector(".vertical-chart-plot");
+      if (!window.Plotly) {
+        renderFallbackChart(plot, chart);
+        return;
+      }
+
+      window.Plotly.newPlot(plot, makeChartData(chart), makeChartLayout(chart), {
+        responsive: true,
+        displayModeBar: false
+      });
+    });
+    rebuildProgress();
+    setActiveChart(activeIndex);
+  }
+
+  function rebuildProgress() {
+    if (!progress) {
+      return;
+    }
+    progress.innerHTML = "";
+    dots = charts.map((chart, index) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "vertical-chart-dot";
+      dot.setAttribute("aria-label", `Show ${chart.title || `chart ${index + 1}`}`);
+      dot.addEventListener("click", () => setActiveChart(index));
+      progress.appendChild(dot);
+      return dot;
+    });
+  }
+
+  function setActiveChart(index) {
+    activeIndex = (index + charts.length) % charts.length;
+    const cards = Array.from(grid.querySelectorAll(".vertical-chart-card"));
+    cards.forEach((card, cardIndex) => {
+      card.classList.toggle("is-active", cardIndex === activeIndex);
+      card.setAttribute("aria-hidden", cardIndex === activeIndex ? "false" : "true");
+    });
+    grid.style.transform = `translateX(-${activeIndex * 100}%)`;
+    dots.forEach((dot, dotIndex) => {
+      dot.classList.toggle("is-active", dotIndex === activeIndex);
+    });
+  }
+
+  if (prev) {
+    prev.addEventListener("click", () => setActiveChart(activeIndex - 1));
+  }
+  if (next) {
+    next.addEventListener("click", () => setActiveChart(activeIndex + 1));
+  }
+
+  renderCharts();
+  window.addEventListener("project-theme-change", renderCharts);
+  setupAutoplayCarousel(panel, {
+    interval: getProjectConfig().verticalChartAutoplayInterval,
+    onAdvance: () => setActiveChart(activeIndex + 1)
+  });
+}
+
+function setupDataPieChart(dataPie) {
+  const plot = document.querySelector("[data-data-pie]");
+  const panel = document.querySelector("[data-data-pie-panel]");
+  if (!plot || !dataPie) {
+    if (panel) {
+      panel.hidden = true;
+    }
+    return;
+  }
+
+  const labels = dataPie.labels || [];
+  const values = dataPie.values || [];
+  const colors = dataPie.colors || ["#ef6a5b", "#4f8cff", "#2fbf8f", "#f2b84b"];
+  const total = values.reduce((sum, value) => sum + value, 0) || 1;
+  let activeIndex = 0;
+
+  function render() {
+    let offset = 0;
+    const gap = labels.length > 1 ? 1.55 : 0;
+    const segments = labels.map((label, index) => {
+      const value = values[index] || 0;
+      const percent = value / total * 100;
+      const visible = Math.max(0, percent - gap);
+      const segment = `
+        <circle
+          class="data-donut-segment${index === activeIndex ? " is-active" : ""}"
+          pathLength="100"
+          cx="130"
+          cy="130"
+          r="92"
+          style="--slice-color:${colors[index] || "#737373"};--slice-size:${visible};stroke-dashoffset:${-offset};"
+          data-pie-index="${index}">
+          <title>${escapeHtml(label)}: ${escapeHtml(value)} (${Math.round(percent)}%)</title>
+        </circle>
+      `;
+      offset += percent;
+      return segment;
+    }).join("");
+
+    const activeLabel = labels[activeIndex] || labels[0] || "";
+    const activeValue = values[activeIndex] || values[0] || 0;
+    const activePercent = Math.round(activeValue / total * 100);
+
+    plot.innerHTML = `
+      <div class="data-donut-card">
+        <div class="data-donut-wrap">
+          <svg class="data-donut-svg" viewBox="0 0 260 260" role="img" aria-label="${escapeHtml(dataPie.title || "Dataset composition")}">
+            <circle class="data-donut-track" cx="130" cy="130" r="92"></circle>
+            ${segments}
+          </svg>
+          <div class="data-donut-center">
+            <strong>${escapeHtml(activePercent)}%</strong>
+            <span>${escapeHtml(activeLabel)}</span>
+          </div>
+        </div>
+        <div class="data-donut-legend">
+          ${labels.map((label, index) => {
+            const percent = Math.round((values[index] || 0) / total * 100);
+            return `
+              <button class="data-donut-legend-item${index === activeIndex ? " is-active" : ""}" type="button" data-pie-index="${index}">
+                <span class="data-donut-swatch" style="--slice-color:${colors[index] || "#737373"};"></span>
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(percent)}%</strong>
+              </button>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+
+    Array.from(plot.querySelectorAll("[data-pie-index]")).forEach((item) => {
+      item.addEventListener("mouseenter", () => setActivePie(Number.parseInt(item.dataset.pieIndex, 10)));
+      item.addEventListener("focus", () => setActivePie(Number.parseInt(item.dataset.pieIndex, 10)));
+      item.addEventListener("click", () => setActivePie(Number.parseInt(item.dataset.pieIndex, 10)));
+    });
+  }
+
+  function setActivePie(index) {
+    if (!Number.isFinite(index) || index < 0 || index >= labels.length || index === activeIndex) {
+      return;
+    }
+    activeIndex = index;
+    render();
+  }
+
+  render();
+  window.addEventListener("project-theme-change", () => render());
 }
 
 function setupDemoGallery() {
@@ -535,16 +1066,207 @@ function setupDemoGallery() {
   prev.addEventListener("click", () => setActiveDemo(activeIndex - 1));
   next.addEventListener("click", () => setActiveDemo(activeIndex + 1));
   setActiveDemo(0);
+  setupAutoplayCarousel(gallery, {
+    onAdvance: () => setActiveDemo(activeIndex + 1)
+  });
 }
 
+function setupEnhancedTables() {
+  const tables = Array.from(document.querySelectorAll(".results-table"));
+  if (tables.length === 0) {
+    return;
+  }
+
+  tables.forEach((table) => {
+    table.classList.add("is-enhanced");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const bodyCells = Array.from(table.querySelectorAll("tbody td"));
+
+    bodyCells.forEach((cell) => {
+      const normalized = cell.textContent.trim().replace(/[,%]/g, "");
+      const value = Number.parseFloat(normalized);
+      if (Number.isFinite(value)) {
+        cell.dataset.value = String(value);
+      }
+    });
+
+    const headerCells = Array.from(table.querySelectorAll("thead tr:last-child th"));
+    headerCells.forEach((_, columnIndex) => {
+      if (columnIndex === 0) {
+        return;
+      }
+      const columnCells = rows
+        .map((row) => row.cells[columnIndex])
+        .filter((cell) => cell && cell.dataset.value !== undefined);
+      if (columnCells.length === 0) {
+        return;
+      }
+      const bestValue = Math.max(...columnCells.map((cell) => Number.parseFloat(cell.dataset.value)));
+      columnCells.forEach((cell) => {
+        if (Number.parseFloat(cell.dataset.value) === bestValue) {
+          cell.classList.add("is-best");
+        }
+      });
+    });
+
+    function clearColumnHover() {
+      Array.from(table.querySelectorAll(".is-column-hovered")).forEach((cell) => {
+        cell.classList.remove("is-column-hovered");
+      });
+    }
+
+    table.addEventListener("mouseover", (event) => {
+      const cell = event.target.closest("th, td");
+      if (!cell || !table.contains(cell)) {
+        return;
+      }
+      clearColumnHover();
+      const columnIndex = cell.cellIndex;
+      if (columnIndex < 0) {
+        return;
+      }
+      Array.from(table.rows).forEach((row) => {
+        if (row.cells[columnIndex]) {
+          row.cells[columnIndex].classList.add("is-column-hovered");
+        }
+      });
+    });
+
+    table.addEventListener("mouseleave", clearColumnHover);
+
+    rows.forEach((row) => {
+      row.addEventListener("click", () => {
+        rows.forEach((otherRow) => {
+          if (otherRow !== row) {
+            otherRow.classList.remove("is-pinned");
+          }
+        });
+        row.classList.toggle("is-pinned");
+      });
+    });
+  });
+}
+
+function setupReferenceSidebar(references) {
+  const mobile = document.querySelector("[data-reference-mobile]");
+  const notes = Array.from(document.querySelectorAll("[data-reference-note]"));
+  const refs = Array.isArray(references) ? references : [];
+  if (refs.length === 0) {
+    if (mobile) {
+      mobile.hidden = true;
+    }
+    notes.forEach((note) => {
+      note.hidden = true;
+    });
+    return;
+  }
+
+  const inlineRefs = Array.from(document.querySelectorAll(".inline-ref[data-ref]"));
+  const firstInlineByRef = new Map();
+  inlineRefs.forEach((link) => {
+    const refId = link.dataset.ref;
+    if (!firstInlineByRef.has(refId)) {
+      firstInlineByRef.set(refId, link);
+      link.id = link.id || `${refId}-source`;
+    }
+  });
+
+  function renderReference(ref, compact = false, idSuffix = "") {
+    const source = firstInlineByRef.get(ref.id);
+    const sourceHref = source ? `#${source.id}` : "#";
+    const itemId = compact ? `${ref.id}-mobile` : idSuffix ? `${ref.id}-${idSuffix}` : ref.id;
+    return `
+      <article class="reference-item" id="${escapeHtml(itemId)}" data-reference-item="${escapeHtml(ref.id)}">
+        <a class="reference-back" href="${sourceHref}" data-reference-back="${escapeHtml(ref.id)}">${escapeHtml(ref.label || "")}</a>
+        <div>
+          <a class="reference-title" href="${escapeHtml(ref.url || "#")}" target="_blank" rel="noopener">${escapeHtml(ref.title || "Untitled reference")}</a>
+          <p>${escapeHtml(ref.authors || "")}${ref.venue ? `. ${escapeHtml(ref.venue)}` : ""}${ref.year ? `, ${escapeHtml(ref.year)}` : ""}</p>
+          ${compact ? "" : `<a class="reference-url" href="${escapeHtml(ref.url || "#")}" target="_blank" rel="noopener">${escapeHtml(ref.url || "")}</a>`}
+        </div>
+      </article>
+    `;
+  }
+
+  notes.forEach((note, noteIndex) => {
+    const ref = refs.find((item) => item.id === note.dataset.referenceNote);
+    if (!ref) {
+      note.hidden = true;
+      return;
+    }
+    note.innerHTML = `
+      <div class="reference-sidebar-card">
+        <span class="reference-sidebar-kicker">Reference</span>
+        ${renderReference(ref, false, `note-${noteIndex + 1}`)}
+      </div>
+    `;
+  });
+
+  if (mobile) {
+    mobile.innerHTML = `
+      <h3>References</h3>
+      ${refs.map((ref) => renderReference(ref, true)).join("")}
+    `;
+  }
+
+  function setActiveReference(refId) {
+    Array.from(document.querySelectorAll("[data-reference-item]")).forEach((item) => {
+      item.classList.toggle("is-active", item.dataset.referenceItem === refId);
+    });
+  }
+
+  inlineRefs.forEach((link) => {
+    link.addEventListener("click", () => {
+      setActiveReference(link.dataset.ref);
+    });
+  });
+
+  Array.from(document.querySelectorAll("[data-reference-back]")).forEach((link) => {
+    link.addEventListener("click", () => {
+      setActiveReference(link.dataset.referenceBack);
+    });
+  });
+}
+
+function setupFooter(footerConfig = {}) {
+  const footer = document.querySelector("[data-footer-copy]");
+  if (!footer) {
+    return;
+  }
+  const organization = footerConfig.organization || "Colalab";
+  const year = footerConfig.year || new Date().getFullYear();
+  footer.innerHTML = `&copy; ${year} ${escapeHtml(organization)}. All rights reserved.`;
+}
+
+window.ProjectPage = {
+  refreshCharts() {
+    window.dispatchEvent(new CustomEvent("project-theme-change", {
+      detail: { theme: document.documentElement.dataset.theme || getSystemTheme() }
+    }));
+  },
+  setupThemeToggle,
+  setupMetricsDashboard,
+  setupVerticalCharts,
+  setupDataPieChart,
+  setupEnhancedTables,
+  setupAutoplayCarousel,
+  setupReferenceSidebar
+};
+
+const config = getProjectConfig();
+setupThemeToggle(config.theme);
 resetPageToHero();
 setupPageNavigation();
 setupMediaCarousel();
 setupHeroCollapse();
 setupMethodDiagram();
 setupTsnePlot();
-setupMetricsDashboard();
+setupMetricsDashboard(config.horizontalMetrics);
+setupVerticalCharts(config.verticalCharts);
+setupDataPieChart(config.dataPie);
 setupDemoGallery();
+setupEnhancedTables();
+setupReferenceSidebar(config.references);
+setupFooter(config.footer);
 window.addEventListener("pageshow", resetPageToHero);
 
 window.addEventListener("scroll", () => {

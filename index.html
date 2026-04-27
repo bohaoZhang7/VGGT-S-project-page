@@ -24,14 +24,122 @@
 
   <link rel="icon" type="image/png" href="cologo/cologo.png">
   <link rel="apple-touch-icon" href="cologo/cologo.png">
+  <script>
+    (function () {
+      var storageKey = "colalab-project-theme";
+      var savedTheme = null;
+      try {
+        savedTheme = window.localStorage.getItem(storageKey);
+      } catch (error) {}
+      var systemTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      var theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemTheme;
+      document.documentElement.dataset.theme = theme;
+    }());
+  </script>
   <link rel="stylesheet" href="static/css/bulma.min.css">
   <link rel="stylesheet" href="static/css/index.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script>
+    window.ProjectPageConfig = {
+      theme: {
+        defaultMode: "system",
+        storageKey: "colalab-project-theme"
+      },
+      demoAutoplayInterval: 6000,
+      verticalChartAutoplayInterval: 7000,
+      horizontalMetrics: {
+        success: [
+          ["Baseline 1", 42, "#64748b", "#94a3b8", "rgba(100, 116, 139, 0.13)"],
+          ["Baseline 2", 58, "#7c3aed", "#a78bfa", "rgba(124, 58, 237, 0.12)"],
+          ["Project Title", 82, "#ef4b34", "#f59e0b", "rgba(239, 75, 52, 0.13)"]
+        ],
+        generalization: [
+          ["Seen tasks", 86, "#0ea5e9", "#35a7ff", "rgba(14, 165, 233, 0.13)"],
+          ["New objects", 74, "#16a34a", "#22c55e", "rgba(34, 197, 94, 0.13)"],
+          ["New scenes", 68, "#f97316", "#facc15", "rgba(249, 115, 22, 0.13)"]
+        ],
+        efficiency: [
+          ["Training cost", 54, "#8b5cf6", "#d946ef", "rgba(139, 92, 246, 0.13)"],
+          ["Fine-tune time", 71, "#06b6d4", "#2dd4bf", "rgba(6, 182, 212, 0.13)"],
+          ["Inference FPS", 88, "#ef4b34", "#fb7185", "rgba(239, 75, 52, 0.13)"]
+        ]
+      },
+      verticalCharts: [
+        {
+          id: "success-rate",
+          title: "Success Rate (%) ↑",
+          xAxisTitle: "Evaluation task",
+          yAxisTitle: "Success rate",
+          unit: "%",
+          caption: "Grouped task results in a kai0-inspired vertical chart. Hover over each bar to inspect exact values.",
+          categories: ["Task A", "Task B", "Task C"],
+          series: [
+            { name: "Baseline 1", values: [42, 51, 60], color: "#4f8cff" },
+            { name: "Baseline 2", values: [58, 63, 68], color: "#f2b84b" },
+            { name: "Project Title", values: [82, 86, 90], color: "#2fbf8f", highlight: true }
+          ]
+        },
+        {
+          id: "throughput",
+          title: "Throughput ↑",
+          xAxisTitle: "Deployment setting",
+          yAxisTitle: "Runs per hour",
+          unit: " r/h",
+          caption: "A second chart demonstrates how later studies can be added without touching the renderer.",
+          categories: ["Lab", "Novel scene", "Long horizon"],
+          series: [
+            { name: "Baseline 1", values: [12, 9, 7], color: "#7c83ff" },
+            { name: "Baseline 2", values: [16, 13, 11], color: "#ff8a65" },
+            { name: "Project Title", values: [24, 21, 18], color: "#26c6da", highlight: true }
+          ]
+        }
+      ],
+      dataPie: {
+        title: "Dataset Composition",
+        caption: "Hover a slice to highlight the source mix and inspect its exact share.",
+        labels: ["Human demos", "Model rollouts", "Held-out tasks", "Failure cases"],
+        values: [42, 28, 18, 12],
+        colors: ["#ef6a5b", "#4f8cff", "#2fbf8f", "#f2b84b"]
+      },
+      references: [
+        {
+          id: "ref-main",
+          label: "[1]",
+          title: "Paper Title",
+          authors: "Author et al.",
+          venue: "Conference",
+          year: "2026",
+          url: "https://example.com"
+        },
+        {
+          id: "ref-data",
+          label: "[2]",
+          title: "Dataset Source Paper",
+          authors: "Dataset Author et al.",
+          venue: "Workshop",
+          year: "2026",
+          url: "https://example.com/data"
+        },
+        {
+          id: "ref-model",
+          label: "[3]",
+          title: "Model Architecture Reference",
+          authors: "Model Author et al.",
+          venue: "Journal",
+          year: "2026",
+          url: "https://example.com/model"
+        }
+      ],
+      footer: {
+        organization: "Colalab",
+        year: 2026
+      },
+      contentTokens: {
+        fontFamily: "Arial, sans-serif",
+        titleFontFamily: "Arial, sans-serif"
+      }
+    };
+
     window.MathJax = {
       tex: {
         inlineMath: [["\\(", "\\)"], ["$", "$"]],
@@ -60,6 +168,14 @@
         <a href="#results" data-nav-link>Results</a>
         <a href="#citation" data-nav-link>Citation</a>
       </div>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4V1h-1v3zm0 19v-3h-1v3zm8-11h3v-1h-3zM1 12h3v-1H1zm17.1-6.4 2.1-2.1-.7-.7-2.1 2.1zM3.5 20.2l2.1-2.1-.7-.7-2.1 2.1zm14.6-2.8-.7.7 2.1 2.1.7-.7zM4.9 5.6l.7-.7-2.1-2.1-.7.7zM11.5 7A4.5 4.5 0 1 0 16 11.5 4.5 4.5 0 0 0 11.5 7z"></path>
+        </svg>
+        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.4 15.1A7.7 7.7 0 0 1 8.9 3.6 9.3 9.3 0 1 0 20.4 15.1z"></path>
+        </svg>
+      </button>
     </div>
     <div class="reading-progress" aria-hidden="true">
       <span data-reading-progress></span>
@@ -120,6 +236,20 @@
           <h2 class="collapsed-title">
             <span class="title-mark">Project Title:</span> An Open-Source Generalist Research Project
           </h2>
+          <div class="after-hero-cola" aria-hidden="true">
+            <div class="after-hero-bubbles">
+              <span class="mini-bubble mini-bubble-1"></span>
+              <span class="mini-bubble mini-bubble-2"></span>
+              <span class="mini-bubble mini-bubble-3"></span>
+              <span class="mini-bubble mini-bubble-4"></span>
+              <span class="mini-bubble mini-bubble-5"></span>
+              <span class="mini-bubble mini-bubble-6"></span>
+              <span class="mini-bubble mini-bubble-7"></span>
+              <span class="mini-bubble mini-bubble-8"></span>
+            </div>
+            <div class="after-hero-cola-wave after-hero-cola-wave-back"></div>
+            <div class="after-hero-cola-wave after-hero-cola-wave-front"></div>
+          </div>
         </div>
         <div class="authors-block">
           <p class="team-label">Project Team</p>
@@ -241,11 +371,15 @@
 
     <section class="section content-section" id="overview">
       <div class="container content-wide">
-        <p class="lead-paragraph">
-          We introduce <strong>Project Title</strong>, our placeholder effort for building an open-source, widely applicable
-          research system. This page is organized to highlight the central idea, team, resources, media, method, data, and
-          results while keeping the title, authors, figures, and links easy to replace with your own project details.
-        </p>
+        <div class="paragraph-with-reference paragraph-with-reference-lead">
+          <p class="lead-paragraph">
+            We introduce <strong>Project Title</strong>, our placeholder effort for building an open-source, widely applicable
+            research system <a class="inline-ref" href="#ref-main" data-ref="ref-main">[1]</a>. This page is organized to
+            highlight the central idea, team, resources, media, method, data, and results while keeping the title, authors,
+            figures, and links easy to replace with your own project details.
+          </p>
+          <aside class="paragraph-reference-note" data-reference-note="ref-main" aria-label="Reference for this paragraph"></aside>
+        </div>
 
         <div class="method-diagram-scroll" data-method-diagram>
           <div class="method-diagram-stage" aria-label="Interactive method diagram">
@@ -304,16 +438,24 @@
           </div>
         </div>
 
-        <div class="video-embed-wrap">
-          <iframe
-            width="800"
-            height="450"
-            src="https://www.youtube.com/embed/JkaxUblCGz0"
-            title="Project video"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen>
-          </iframe>
+        <div class="video-card">
+          <div class="video-card-copy">
+            <span class="eyebrow-label">Project video</span>
+            <h3>Overview presentation</h3>
+            <p>Use this embedded video slot for a paper overview, experiment montage, or narrated demo.</p>
+          </div>
+          <figure class="video-embed-wrap">
+            <iframe
+              width="800"
+              height="450"
+              src="https://www.youtube.com/embed/JkaxUblCGz0"
+              title="Project video"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+            <figcaption>Project overview video with replaceable caption and source.</figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -321,12 +463,15 @@
     <section class="section content-section" id="model">
       <div class="container content-wide">
         <h2 class="section-title">The Model</h2>
-        <p class="body-paragraph">
-          The design of Project Title emphasizes flexibility and scale: the system is meant to support multiple task
-          definitions, observation layouts, and deployment settings while remaining simple enough to finetune or adapt.
-          This placeholder block should eventually describe your architecture, input modalities, output space, and why
-          the method is broadly useful.
-        </p>
+        <div class="paragraph-with-reference">
+          <p class="body-paragraph">
+            The design of Project Title emphasizes flexibility and scale: the system is meant to support multiple task
+            definitions, observation layouts, and deployment settings while remaining simple enough to finetune or adapt
+            <a class="inline-ref" href="#ref-model" data-ref="ref-model">[3]</a>. This placeholder block should eventually
+            describe your architecture, input modalities, output space, and why the method is broadly useful.
+          </p>
+          <aside class="paragraph-reference-note" data-reference-note="ref-model" aria-label="Reference for this paragraph"></aside>
+        </div>
 
         <div class="model-architecture" data-model-architecture>
           <div class="model-architecture-header">
@@ -432,11 +577,15 @@
     <section class="section content-section" id="data">
       <div class="container content-wide">
         <h2 class="section-title">The Data</h2>
-        <p class="body-paragraph">
-          This section is reserved for dataset composition, collection diversity, task coverage, and benchmark setup. If
-          your project is not primarily data-centric, it can easily become a training pipeline or system setup section.
-          The structure here uses compact prose followed by a single supporting figure for fast scanning.
-        </p>
+        <div class="paragraph-with-reference">
+          <p class="body-paragraph">
+            This section is reserved for dataset composition, collection diversity, task coverage, and benchmark setup
+            <a class="inline-ref" href="#ref-data" data-ref="ref-data">[2]</a>. If your project is not primarily
+            data-centric, it can easily become a training pipeline or system setup section. The structure here uses
+            compact prose followed by a single supporting figure for fast scanning.
+          </p>
+          <aside class="paragraph-reference-note" data-reference-note="ref-data" aria-label="Reference for this paragraph"></aside>
+        </div>
         <div class="interactive-data-panel">
           <div class="interactive-panel-copy">
             <span class="eyebrow-label">Interactive embedding</span>
@@ -448,17 +597,30 @@
           </div>
           <div id="tsne-plot" class="tsne-plot" aria-label="Interactive 3D scatter plot"></div>
         </div>
+
+        <div class="data-pie-panel" data-data-pie-panel>
+          <div class="interactive-panel-copy">
+            <span class="eyebrow-label">Dataset mix</span>
+            <h3>Interactive composition chart</h3>
+            <p>Hover over each slice to pull it forward and reveal the exact contribution to the dataset.</p>
+          </div>
+          <div class="data-pie-plot" data-data-pie aria-label="Interactive dataset composition pie chart"></div>
+        </div>
       </div>
     </section>
 
     <section class="section content-section" id="results">
       <div class="container content-wide">
         <h2 class="section-title">The Results</h2>
-        <p class="body-paragraph">
-          We evaluate Project Title across several placeholder tasks and scenarios. This section is intended to hold your
-          main quantitative comparison, finetuning or ablation results, and a concise narrative for where the gains come
-          from. The tables below use a compact black-rule academic style for dense quantitative comparison.
-        </p>
+        <div class="paragraph-with-reference">
+          <p class="body-paragraph">
+            We evaluate Project Title across several placeholder tasks and scenarios. This section is intended to hold your
+            main quantitative comparison, finetuning or ablation results, and a concise narrative for where the gains come
+            from <a class="inline-ref" href="#ref-main" data-ref="ref-main">[1]</a>. The tables below use a compact
+            black-rule academic style for dense quantitative comparison.
+          </p>
+          <aside class="paragraph-reference-note" data-reference-note="ref-main" aria-label="Reference for this paragraph"></aside>
+        </div>
 
         <div class="metrics-dashboard" data-metrics-dashboard>
           <div class="metrics-header">
@@ -473,6 +635,31 @@
             </div>
           </div>
           <div class="metric-chart" data-metric-chart aria-label="Metric bar chart"></div>
+        </div>
+
+        <div class="vertical-results-panel" data-vertical-results>
+          <div class="vertical-results-header">
+            <div>
+              <span class="eyebrow-label">Ablation view</span>
+              <h3>Vertical task comparison</h3>
+            </div>
+          </div>
+          <div class="vertical-chart-stage">
+            <button class="vertical-chart-arrow vertical-chart-prev" type="button" aria-label="Previous chart" data-vertical-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15.4 4.6 8 12l7.4 7.4-1.4 1.4L5.2 12 14 3.2z"></path>
+              </svg>
+            </button>
+            <div class="vertical-charts-viewport">
+              <div class="vertical-charts-grid" data-vertical-charts></div>
+            </div>
+            <button class="vertical-chart-arrow vertical-chart-next" type="button" aria-label="Next chart" data-vertical-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m8.6 19.4 7.4-7.4-7.4-7.4L10 3.2 18.8 12 10 20.8z"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="vertical-chart-progress" data-vertical-progress aria-label="Chart progress"></div>
         </div>
 
         <div class="demo-gallery" data-demo-gallery>
@@ -527,7 +714,7 @@
           <div class="demo-gallery-dots" data-demo-dots></div>
         </div>
 
-        <div class="tables-wrap">
+        <div class="tables-wrap" data-enhanced-tables>
           <table class="results-table results-table-compact">
             <thead>
               <tr>
@@ -549,9 +736,9 @@
               </tr>
               <tr>
                 <td>Baseline 2</td>
-                <td>0.50</td>
+                <td class="is-best">0.50</td>
                 <td>&mdash;</td>
-                <td>0.85</td>
+                <td class="is-best">0.85</td>
               </tr>
               <tr class="strong-row bottom-rule">
                 <td>Project Title</td>
@@ -638,6 +825,7 @@
           </button>
         </div>
         <p class="citation-note">Please replace the placeholder BibTeX below with your actual paper metadata.</p>
+        <div class="references-mobile" data-reference-mobile aria-label="References"></div>
         <pre id="bibtex-code"><code>@inproceedings{project2026,
   title={Project Title: An Open-Source Generalist Research Project},
   author={First Author and Second Author and Third Author and Fourth Author},
@@ -652,10 +840,7 @@
   <footer class="footer">
     <div class="container content-wide">
       <div class="content has-text-centered">
-        <p>
-          This homepage is adapted inside the local Academic Project Page template and customized for a research project
-          with editable authors, resources, media, results, and citation metadata.
-        </p>
+        <p data-footer-copy>&copy; 2026 Colalab. All rights reserved.</p>
       </div>
     </div>
   </footer>
