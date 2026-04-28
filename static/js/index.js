@@ -245,7 +245,7 @@ function setupMediaCarousel() {
 
   let currentIndex = 0;
   let visibleCount = 3;
-  let maxIndex = 0;
+  let cloneCount = 0;
   let dots = [];
 
   function getGap() {
@@ -260,18 +260,46 @@ function setupMediaCarousel() {
 
   function rebuildDots() {
     dotsWrap.innerHTML = "";
-    dots = Array.from({ length: Math.max(1, maxIndex + 1) }, (_, index) => {
+    dots = slides.map((_, index) => {
       const dot = document.createElement("button");
       dot.type = "button";
       dot.className = "carousel-dot";
-      dot.setAttribute("aria-label", `Go to position ${index + 1}`);
+      dot.setAttribute("aria-label", `Go to demo ${index + 1}`);
       dot.addEventListener("click", () => {
-        currentIndex = index;
+        currentIndex = cloneCount + index;
         updateCarousel();
       });
       dotsWrap.appendChild(dot);
       return dot;
     });
+  }
+
+  function rebuildClones() {
+    Array.from(track.querySelectorAll("[data-carousel-clone]")).forEach((clone) => clone.remove());
+    cloneCount = Math.min(visibleCount, slides.length);
+    const firstRealSlide = slides[0];
+
+    slides.slice(-cloneCount).forEach((slide) => {
+      const clone = slide.cloneNode(true);
+      clone.setAttribute("data-carousel-clone", "true");
+      clone.removeAttribute("data-carousel-slide");
+      clone.setAttribute("aria-hidden", "true");
+      clone.tabIndex = -1;
+      track.insertBefore(clone, firstRealSlide);
+    });
+
+    slides.slice(0, cloneCount).forEach((slide) => {
+      const clone = slide.cloneNode(true);
+      clone.setAttribute("data-carousel-clone", "true");
+      clone.removeAttribute("data-carousel-slide");
+      clone.setAttribute("aria-hidden", "true");
+      clone.tabIndex = -1;
+      track.appendChild(clone);
+    });
+  }
+
+  function getLogicalIndex() {
+    return ((currentIndex - cloneCount) % slides.length + slides.length) % slides.length;
   }
 
   function updateCarousel() {
@@ -281,34 +309,171 @@ function setupMediaCarousel() {
     track.style.transform = `translateX(-${offset}px)`;
 
     dots.forEach((dot, index) => {
-      dot.classList.toggle("is-active", index === currentIndex);
+      dot.classList.toggle("is-active", index === getLogicalIndex());
+    });
+  }
+
+  function resetCarouselTo(index) {
+    track.classList.add("is-resetting");
+    currentIndex = index;
+    updateCarousel();
+    track.getBoundingClientRect();
+    window.requestAnimationFrame(() => {
+      track.classList.remove("is-resetting");
     });
   }
 
   function recalcCarousel() {
+    const logicalIndex = getLogicalIndex();
     visibleCount = window.innerWidth <= 768 ? 1 : 3;
-    maxIndex = Math.max(0, slides.length - visibleCount);
-    currentIndex = Math.min(currentIndex, maxIndex);
+    rebuildClones();
+    currentIndex = cloneCount + logicalIndex;
     rebuildDots();
-    updateCarousel();
+    resetCarouselTo(currentIndex);
   }
 
   prevButton.addEventListener("click", () => {
-    currentIndex = currentIndex === 0 ? maxIndex : currentIndex - 1;
+    currentIndex -= 1;
     updateCarousel();
   });
 
   nextButton.addEventListener("click", () => {
-    currentIndex = currentIndex === maxIndex ? 0 : currentIndex + 1;
+    currentIndex += 1;
     updateCarousel();
+  });
+
+  track.addEventListener("transitionend", (event) => {
+    if (event.target !== track || event.propertyName !== "transform") {
+      return;
+    }
+    if (currentIndex < cloneCount) {
+      resetCarouselTo(cloneCount + slides.length - 1);
+    } else if (currentIndex >= cloneCount + slides.length) {
+      resetCarouselTo(cloneCount);
+    }
   });
 
   window.addEventListener("resize", recalcCarousel);
   recalcCarousel();
   setupAutoplayCarousel(carousel, {
     onAdvance: () => {
-      currentIndex = currentIndex === maxIndex ? 0 : currentIndex + 1;
+      currentIndex += 1;
       updateCarousel();
+    }
+  });
+}
+
+function setupMediaPreviewModal() {
+  const modal = document.querySelector("[data-media-preview-modal]");
+  const content = modal ? modal.querySelector("[data-media-preview-content]") : null;
+  const closeButtons = modal ? Array.from(modal.querySelectorAll("[data-media-preview-close]")) : [];
+  const carousel = document.querySelector("[data-carousel]");
+  const tiles = Array.from(document.querySelectorAll("[data-carousel-slide]"));
+  if (!modal || !content || !carousel || tiles.length === 0) {
+    return;
+  }
+
+  let lastFocusedElement = null;
+
+  function clearPreview() {
+    const media = content.querySelector("video, img");
+    if (media && media.tagName === "VIDEO") {
+      media.pause();
+    }
+    content.innerHTML = "";
+  }
+
+  function closePreview() {
+    modal.hidden = true;
+    document.body.classList.remove("media-preview-open");
+    clearPreview();
+    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+      lastFocusedElement.focus();
+    }
+  }
+
+  function createPreviewMedia(tile) {
+    const video = tile.querySelector("video");
+    if (video) {
+      const source = video.currentSrc || (video.querySelector("source") && video.querySelector("source").src) || video.src;
+      if (!source) {
+        return null;
+      }
+      const previewVideo = document.createElement("video");
+      previewVideo.src = source;
+      previewVideo.controls = true;
+      previewVideo.autoplay = true;
+      previewVideo.playsInline = true;
+      previewVideo.loop = video.loop;
+      previewVideo.muted = video.muted;
+      previewVideo.preload = "metadata";
+      return previewVideo;
+    }
+
+    const image = tile.querySelector("img");
+    if (image && image.src) {
+      const previewImage = document.createElement("img");
+      previewImage.src = image.src;
+      previewImage.alt = image.alt || "Media preview";
+      return previewImage;
+    }
+
+    return null;
+  }
+
+  function openPreview(tile) {
+    const media = createPreviewMedia(tile);
+    if (!media) {
+      return;
+    }
+    lastFocusedElement = document.activeElement;
+    clearPreview();
+    content.appendChild(media);
+    modal.hidden = false;
+    document.body.classList.add("media-preview-open");
+    const closeButton = modal.querySelector(".media-preview-close");
+    if (closeButton) {
+      closeButton.focus();
+    }
+    if (media.tagName === "VIDEO") {
+      media.play().catch(() => {});
+    }
+  }
+
+  function getPreviewTile(eventTarget) {
+    const tile = eventTarget.closest(".media-tile");
+    if (!tile || !carousel.contains(tile)) {
+      return null;
+    }
+    return tile;
+  }
+
+  tiles.forEach((tile, index) => {
+    tile.tabIndex = 0;
+    tile.setAttribute("role", "button");
+    tile.setAttribute("aria-label", `Preview demo ${index + 1}`);
+    tile.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPreview(tile);
+      }
+    });
+  });
+
+  carousel.addEventListener("click", (event) => {
+    const tile = getPreviewTile(event.target);
+    if (tile) {
+      openPreview(tile);
+    }
+  });
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", closePreview);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (!modal.hidden && event.key === "Escape") {
+      closePreview();
     }
   });
 }
@@ -850,31 +1015,46 @@ function setupVerticalCharts(verticalCharts) {
     `;
   }
 
-  function renderCharts() {
-    grid.innerHTML = "";
-    charts.forEach((chart) => {
-      const card = document.createElement("article");
-      card.className = "vertical-chart-card";
-      card.innerHTML = `
-        <div class="vertical-chart-title-row">
-          <h4>${escapeHtml(chart.title)}</h4>
-        </div>
-        <div class="vertical-chart-plot" id="vertical-chart-${escapeHtml(chart.id)}" aria-label="${escapeHtml(chart.title)}"></div>
-        ${chart.caption ? `<p class="vertical-chart-caption">${escapeHtml(chart.caption)}</p>` : ""}
-      `;
-      grid.appendChild(card);
+  function createChartCard(chart, options = {}) {
+    const { position = 0 } = options;
+    const card = document.createElement("article");
+    card.className = "vertical-chart-card";
+    card.innerHTML = `
+      <div class="vertical-chart-title-row">
+        <h4>${escapeHtml(chart.title)}</h4>
+      </div>
+      <div class="vertical-chart-plot" id="vertical-chart-${escapeHtml(chart.id)}-${position}" aria-label="${escapeHtml(chart.title)}"></div>
+      ${chart.caption ? `<p class="vertical-chart-caption">${escapeHtml(chart.caption)}</p>` : ""}
+    `;
+    return card;
+  }
 
-      const plot = card.querySelector(".vertical-chart-plot");
-      if (!window.Plotly) {
-        renderFallbackChart(plot, chart);
-        return;
-      }
-
-      window.Plotly.newPlot(plot, makeChartData(chart), makeChartLayout(chart), {
-        responsive: true,
-        displayModeBar: false
-      });
+  function renderChartCard(card, chart) {
+    const plot = card.querySelector(".vertical-chart-plot");
+    if (!plot) {
+      return;
+    }
+    if (!window.Plotly) {
+      renderFallbackChart(plot, chart);
+      return;
+    }
+    window.Plotly.newPlot(plot, makeChartData(chart), makeChartLayout(chart), {
+      responsive: true,
+      displayModeBar: false
     });
+  }
+
+  function renderCharts() {
+    const logicalIndex = activeIndex % charts.length;
+    grid.innerHTML = "";
+
+    charts.forEach((chart, position) => {
+      const card = createChartCard(chart, { position });
+      grid.appendChild(card);
+      renderChartCard(card, chart);
+    });
+
+    activeIndex = logicalIndex;
     rebuildProgress();
     setActiveChart(activeIndex);
   }
@@ -896,13 +1076,27 @@ function setupVerticalCharts(verticalCharts) {
   }
 
   function setActiveChart(index) {
-    activeIndex = (index + charts.length) % charts.length;
+    const previousIndex = activeIndex;
+    const nextIndex = (index + charts.length) % charts.length;
+    const forwardDistance = (nextIndex - previousIndex + charts.length) % charts.length;
+    const backwardDistance = (previousIndex - nextIndex + charts.length) % charts.length;
+    const direction = forwardDistance === 0 ? 0 : forwardDistance <= backwardDistance ? 1 : -1;
+    activeIndex = nextIndex;
     const cards = Array.from(grid.querySelectorAll(".vertical-chart-card"));
+    grid.classList.toggle("is-moving-forward", direction >= 0);
+    grid.classList.toggle("is-moving-backward", direction < 0);
     cards.forEach((card, cardIndex) => {
-      card.classList.toggle("is-active", cardIndex === activeIndex);
-      card.setAttribute("aria-hidden", cardIndex === activeIndex ? "false" : "true");
+      const isActive = cardIndex === activeIndex;
+      const isPrev = cardIndex === (activeIndex - 1 + charts.length) % charts.length;
+      const isNext = cardIndex === (activeIndex + 1) % charts.length;
+      const wasActive = cardIndex === previousIndex;
+      card.classList.toggle("is-active", isActive);
+      card.classList.toggle("is-prev", isPrev);
+      card.classList.toggle("is-next", isNext);
+      card.classList.toggle("is-exiting", wasActive && !isActive);
+      card.classList.toggle("is-hidden", !isActive && !isPrev && !isNext);
+      card.setAttribute("aria-hidden", isActive ? "false" : "true");
     });
-    grid.style.transform = `translateX(-${activeIndex * 100}%)`;
     dots.forEach((dot, dotIndex) => {
       dot.classList.toggle("is-active", dotIndex === activeIndex);
     });
@@ -917,10 +1111,12 @@ function setupVerticalCharts(verticalCharts) {
 
   renderCharts();
   window.addEventListener("project-theme-change", renderCharts);
-  setupAutoplayCarousel(panel, {
-    interval: getProjectConfig().verticalChartAutoplayInterval,
-    onAdvance: () => setActiveChart(activeIndex + 1)
-  });
+  if (charts.length > 1) {
+    setupAutoplayCarousel(panel, {
+      interval: getProjectConfig().verticalChartAutoplayInterval,
+      onAdvance: () => setActiveChart(activeIndex + 1)
+    });
+  }
 }
 
 function setupDataPieChart(dataPie) {
@@ -1051,7 +1247,7 @@ function setupDemoGallery() {
       card.classList.toggle("is-next", isNext);
       card.classList.toggle("is-hidden", !isActive && !isPrev && !isNext);
       if (video) {
-        if (isActive) {
+        if (isActive && !card.hasAttribute("data-demo-manual-video")) {
           video.play().catch(() => {});
         } else {
           video.pause();
@@ -1249,6 +1445,7 @@ window.ProjectPage = {
   setupDataPieChart,
   setupEnhancedTables,
   setupAutoplayCarousel,
+  setupMediaPreviewModal,
   setupReferenceSidebar
 };
 
@@ -1257,6 +1454,7 @@ setupThemeToggle(config.theme);
 resetPageToHero();
 setupPageNavigation();
 setupMediaCarousel();
+setupMediaPreviewModal();
 setupHeroCollapse();
 setupMethodDiagram();
 setupTsnePlot();

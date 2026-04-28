@@ -350,12 +350,6 @@
               </video>
               <span class="media-speed-badge">1x</span>
             </article>
-            <article class="media-tile" data-carousel-slide>
-              <video autoplay muted loop playsinline preload="metadata">
-                <source src="static/videos/carousel1.mp4" type="video/mp4">
-              </video>
-              <span class="media-speed-badge">1x</span>
-            </article>
           </div>
         </div>
 
@@ -454,7 +448,6 @@
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen>
             </iframe>
-            <figcaption>Project overview video with replaceable caption and source.</figcaption>
           </figure>
         </div>
       </div>
@@ -703,6 +696,15 @@
                     <strong>Out-of-distribution scene</strong>
                   </div>
                 </article>
+                <article class="demo-card demo-card-player" data-demo-card data-demo-manual-video>
+                  <video controls playsinline preload="metadata">
+                    <source src="static/videos/banner_video.mp4" type="video/mp4">
+                  </video>
+                  <div class="demo-card-caption">
+                    <span>Playable demo</span>
+                    <strong>Scrubbable example video</strong>
+                  </div>
+                </article>
               </div>
             </div>
             <button class="demo-gallery-arrow demo-gallery-next" type="button" aria-label="Next demo" data-demo-next>
@@ -714,95 +716,110 @@
           <div class="demo-gallery-dots" data-demo-dots></div>
         </div>
 
-        <div class="tables-wrap" data-enhanced-tables>
-          <table class="results-table results-table-compact">
-            <thead>
-              <tr>
-                <th colspan="4" class="table-title">Zero-shot</th>
-              </tr>
-              <tr class="header-rule">
-                <th></th>
-                <th>Task A</th>
-                <th>Task B</th>
-                <th>Task C</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Baseline 1</td>
-                <td>0.20</td>
-                <td>0.35</td>
-                <td>0.60</td>
-              </tr>
-              <tr>
-                <td>Baseline 2</td>
-                <td class="is-best">0.50</td>
-                <td>&mdash;</td>
-                <td class="is-best">0.85</td>
-              </tr>
-              <tr class="strong-row bottom-rule">
-                <td>Project Title</td>
-                <td>0.50</td>
-                <td>0.70</td>
-                <td>0.80</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="tables-panel" data-enhanced-tables>
+          <div class="demo-gallery-copy tables-panel-copy">
+            <span class="eyebrow-label">Result tables</span>
+            <h3>Quantitative comparison</h3>
+            <p>Hover to scan rows and columns; click a row to pin it while comparing methods across settings.</p>
+          </div>
+          <div class="tables-wrap">
+            <div class="table-card">
+              <div class="table-scroll">
+                <table class="results-table results-table-compact">
+                  <thead>
+                    <tr>
+                      <th colspan="4" class="table-title">Zero-shot</th>
+                    </tr>
+                    <tr class="header-rule">
+                      <th></th>
+                      <th>Task A</th>
+                      <th>Task B</th>
+                      <th>Task C</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Baseline 1</td>
+                      <td>0.20</td>
+                      <td>0.35</td>
+                      <td>0.60</td>
+                    </tr>
+                    <tr>
+                      <td>Baseline 2</td>
+                      <td class="is-best">0.50</td>
+                      <td>&mdash;</td>
+                      <td class="is-best">0.85</td>
+                    </tr>
+                    <tr class="strong-row bottom-rule">
+                      <td>Project Title</td>
+                      <td>0.50</td>
+                      <td>0.70</td>
+                      <td>0.80</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-          <table class="results-table results-table-wide">
-            <thead>
-              <tr>
-                <th colspan="8" class="table-title">Finetuning</th>
-              </tr>
-              <tr class="header-rule">
-                <th></th>
-                <th>Setup 1</th>
-                <th>Setup 2</th>
-                <th>Setup 3<sup>*</sup></th>
-                <th>Setup 4<sup>&dagger;</sup></th>
-                <th>Setup 5<sup>&dagger;</sup></th>
-                <th>Setup 6</th>
-                <th>Average</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>From Scratch</td>
-                <td>0.25</td>
-                <td>0.45</td>
-                <td>0.10</td>
-                <td>0.00</td>
-                <td>0.20</td>
-                <td>0.20</td>
-                <td>0.20</td>
-              </tr>
-              <tr>
-                <td>Backbone Init</td>
-                <td>0.30</td>
-                <td>0.00</td>
-                <td>0.05</td>
-                <td>0.00</td>
-                <td>0.50</td>
-                <td>0.10</td>
-                <td>0.15</td>
-              </tr>
-              <tr class="strong-row bottom-rule">
-                <td>Project Title</td>
-                <td>0.50</td>
-                <td>0.75</td>
-                <td>0.70</td>
-                <td>0.60</td>
-                <td>0.80</td>
-                <td>1.00</td>
-                <td>0.72</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-footnotes">
-          <span><sup>*</sup> New observation input placeholder</span>
-          <span><sup>&dagger;</sup> New action space placeholder</span>
+            <div class="table-card table-card-wide">
+              <div class="table-scroll">
+                <table class="results-table results-table-wide">
+                  <thead>
+                    <tr>
+                      <th colspan="8" class="table-title">Finetuning</th>
+                    </tr>
+                    <tr class="header-rule">
+                      <th></th>
+                      <th>Setup 1</th>
+                      <th>Setup 2</th>
+                      <th>Setup 3<sup>*</sup></th>
+                      <th>Setup 4<sup>&dagger;</sup></th>
+                      <th>Setup 5<sup>&dagger;</sup></th>
+                      <th>Setup 6</th>
+                      <th>Average</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>From Scratch</td>
+                      <td>0.25</td>
+                      <td>0.45</td>
+                      <td>0.10</td>
+                      <td>0.00</td>
+                      <td>0.20</td>
+                      <td>0.20</td>
+                      <td>0.20</td>
+                    </tr>
+                    <tr>
+                      <td>Backbone Init</td>
+                      <td>0.30</td>
+                      <td>0.00</td>
+                      <td>0.05</td>
+                      <td>0.00</td>
+                      <td>0.50</td>
+                      <td>0.10</td>
+                      <td>0.15</td>
+                    </tr>
+                    <tr class="strong-row bottom-rule">
+                      <td>Project Title</td>
+                      <td>0.50</td>
+                      <td>0.75</td>
+                      <td>0.70</td>
+                      <td>0.60</td>
+                      <td>0.80</td>
+                      <td>1.00</td>
+                      <td>0.72</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <p class="table-caption">Table 1. Placeholder benchmark summary for zero-shot and finetuning settings.</p>
+          <div class="table-footnotes">
+            <span><sup>*</sup> New observation input placeholder</span>
+            <span><sup>&dagger;</sup> New action space placeholder</span>
+          </div>
         </div>
 
         <p class="body-paragraph body-paragraph-spaced">
@@ -844,5 +861,17 @@
       </div>
     </div>
   </footer>
+
+  <div class="media-preview-modal" data-media-preview-modal hidden>
+    <button class="media-preview-backdrop" type="button" aria-label="Close preview" data-media-preview-close></button>
+    <figure class="media-preview-frame" role="dialog" aria-modal="true" aria-label="Media preview">
+      <button class="media-preview-close" type="button" aria-label="Close preview" data-media-preview-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"></path>
+        </svg>
+      </button>
+      <div class="media-preview-content" data-media-preview-content></div>
+    </figure>
+  </div>
 </body>
 </html>
