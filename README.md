@@ -1,59 +1,7 @@
-# Colalab 项目主页说明书
+# Colalab 项目主页说明
 
 这是一个面向论文、模型、数据集、实验结果和项目展示的静态项目主页模板。它使用原生 `HTML + CSS + JavaScript` 实现，不需要 React、Vue 或 npm 构建流程；你可以直接编辑 `index.html`、`static/css/index.css` 和 `static/js/index.js` 来替换内容、调整样式和扩展交互。
 
-它适合用于：
-
-- 学术论文主页
-- 开源模型或系统项目主页
-- 数据集与 benchmark 展示页
-- 机器人、视觉、语言模型、多模态等实验型项目展示
-- 需要视频 demo、图表、表格、引用和代码入口的研究项目
-
-## 为什么这个模板好用
-
-### 1. 纯静态，部署简单
-
-整个页面不依赖构建工具，GitHub Pages、学校服务器、实验室主页、Cloudflare Pages 等静态托管都可以直接部署。修改内容时也不需要安装复杂环境。
-
-### 2. 模块完整，适合研究项目
-
-页面已经包含一个完整项目主页常见的核心模块：
-
-- Hero 首屏动画
-- Logo 与项目标题
-- 作者和机构信息
-- Paper / Code / Model / Dataset 等资源入口
-- 顶部 demo carousel
-- 项目介绍段落
-- 交互式方法图
-- 可替换模型结构图
-- 项目视频
-- 数据可视化
-- 3D scatter / t-SNE 占位图
-- 圆环数据组成图
-- 横向实验指标图
-- 纵向柱状图 carousel
-- 下方 demo gallery
-- 交互式实验表格
-- 段落引用和侧边 reference
-- BibTeX 引用
-- 夜间模式
-- Footer copyright
-
-这些模块覆盖了论文主页从“吸引读者”到“展示可信实验”的主要需求。
-
-### 3. 交互丰富，但结构仍然清楚
-
-页面提供 carousel、图表、表格 hover、高亮、视频预览、引用跳转、夜间模式等交互，但仍然保留了可读的 HTML 结构。后续替换文字、图片、视频、表格和引用时，不需要理解复杂框架。
-
-### 4. 视觉风格统一
-
-页面里的 demo、video、data chart、results table 都采用一致的卡片式模块设计，适合科研项目的展示气质：信息密度高，但不显得杂乱。
-
-### 5. 方便后续扩展
-
-页面通过 `window.ProjectPageConfig` 集中暴露了一部分配置，例如主题、图表数据、demo 播放间隔、引用信息和 footer 信息。未来想替换图表数据、自动滚动时间、引用列表等，可以优先从配置对象入手。
 
 ## 快速预览
 
@@ -70,10 +18,6 @@ http://localhost:8000
 ```
 
 建议使用本地服务器预览，不要直接双击打开 `index.html`。有些浏览器在 `file://` 模式下会限制视频、脚本或资源加载行为。
-
-## 介绍视频
-
-[打开介绍视频](https://github.com/buaa-colalab/colalab-project-page/raw/main/static/videos/project-intro.webm)
 
 ## 文件结构说明
 
@@ -170,12 +114,6 @@ Hero 下方有作者、机构和资源按钮区域。资源按钮适合链接到
 - Weights
 - Datasets
 
-优点：
-
-- 用户能快速进入最重要资源
-- 图标化按钮比纯文本链接更容易扫读
-- 适合论文主页常见访问路径
-
 修改方式：
 
 在 `index.html` 搜索：
@@ -207,11 +145,6 @@ class="resource-card"
 - 预览时背景虚化
 - 支持视频播放控制
 
-优点：
-
-- 读者不用滚动太久就能看到项目“真的能做什么”
-- 多个 demo 可以在有限空间内展示
-- 点击放大能兼顾首页紧凑布局和细节查看
 
 修改位置：
 
@@ -246,12 +179,6 @@ class="resource-card"
 
 页面会在对应段落旁边显示 reference 卡片。
 
-优点：
-
-- 不用把引用全部堆在页面底部
-- 读者能在阅读时直接看到相关论文信息
-- 引用卡片可以跳转，方便追踪来源
-
 引用数据在 `window.ProjectPageConfig.references` 中配置。
 
 每条引用包含：
@@ -284,12 +211,6 @@ data -> model -> deployment -> feedback
 - 图中节点、连线和文字说明同步变化
 - 适合解释 pipeline、模型流程、训练流程或系统部署流程
 
-优点：
-
-- 比静态图片更容易解释复杂方法
-- 可以把读者注意力引导到当前步骤
-- 后续可以替换为自己的 SVG 或 HTML 模块
-
 相关位置：
 
 ```html
@@ -317,12 +238,6 @@ data-method-step="encoder"
 - 支持 MathJax LaTeX 公式
 - 支持夜间模式适配
 - 可以替换成自己的架构图
-
-优点：
-
-- 比截图更容易后期修改
-- 适合论文主页里展示模型结构
-- 可以保留动态图线，视觉上更清楚
 
 相关位置：
 
@@ -360,11 +275,6 @@ src="https://www.youtube.com/embed/JkaxUblCGz0"
 
 替换成自己的视频 ID 即可。
 
-优点：
-
-- 适合放 2 到 5 分钟项目介绍
-- 用户可以在页面内直接观看
-- 和其他卡片模块视觉统一
 
 ## 8. The Data 数据展示
 
@@ -379,12 +289,6 @@ Data 区域包含两种可视化：
 ```js
 setupTsnePlot()
 ```
-
-优点：
-
-- 适合展示数据多样性
-- 可以让数据集不只是文字描述
-- 支持旋转、缩放和 hover
 
 ### Interactive Composition Chart
 
@@ -403,10 +307,6 @@ setupTsnePlot()
 window.ProjectPageConfig.dataPie
 ```
 
-优点：
-
-- 比普通饼图更清爽
-- 适合展示 dataset mix、任务比例、场景比例、来源比例等
 
 ## 9. The Results 实验结果
 
@@ -448,11 +348,6 @@ window.ProjectPageConfig.horizontalMetrics
 window.ProjectPageConfig.verticalCharts
 ```
 
-优点：
-
-- 横向图适合摘要比较，纵向图适合细分任务比较
-- carousel 可以放多个实验视角，不会把页面拉得太长
-
 ### Demo Gallery
 
 下方 demo gallery 用于展示 qualitative rollouts。
@@ -465,10 +360,6 @@ window.ProjectPageConfig.verticalCharts
 - 自动播放
 - 支持一个可播放、可暂停、可拖动进度条的视频示例
 
-优点：
-
-- 定量结果之外，也能展示实际效果
-- 适合放成功案例、失败案例、长时序 demo、跨场景 demo
 
 ### 实验表格模块
 
@@ -484,11 +375,6 @@ window.ProjectPageConfig.verticalCharts
 - 窄屏时变成一列
 - 宽表在卡片内部横向滚动
 
-优点：
-
-- 学术结果通常需要表格，但普通表格容易显得生硬
-- 卡片包装后和页面其他模块统一
-- hover / pin 能帮助读者横向比较数据
 
 表格位置：
 
@@ -512,11 +398,6 @@ window.ProjectPageConfig.verticalCharts
 <pre id="bibtex-code"><code>...</code></pre>
 ```
 
-优点：
-
-- 方便别人引用你的项目或论文
-- Copy 按钮会自动复制 BibTeX 内容
-
 ## 11. 夜间模式
 
 页面支持夜间模式：
@@ -534,11 +415,6 @@ theme: {
   storageKey: "colalab-project-theme"
 }
 ```
-
-优点：
-
-- 学术主页经常被长时间阅读，夜间模式更舒适
-- 视觉上也更适合展示视频和图表
 
 ## 12. Footer
 
@@ -731,18 +607,3 @@ references: [
 - 修改 CSS 前优先搜索已有类名，尽量沿用现有设计系统。
 - 修改 JS 前优先查看是否已有配置项可以满足需求。
 - 发布前同时检查浅色模式、夜间模式、移动端和桌面端。
-
-## 总结
-
-这个模板的目标不是做一个普通静态页面，而是提供一个“研究项目说明书式主页”：它既能展示项目的视觉吸引力，也能承载论文主页需要的严肃信息，包括方法、数据、实验、引用和资源入口。
-
-它的优点是：
-
-- 内容模块完整
-- 视觉风格统一
-- 交互足够丰富
-- 结构仍然容易修改
-- 部署成本低
-- 后续扩展方便
-
-因此，它适合作为 Colalab 项目、论文主页和开源研究系统的基础页面。
