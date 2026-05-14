@@ -71,6 +71,10 @@ http://localhost:8000
 
 建议使用本地服务器预览，不要直接双击打开 `index.html`。有些浏览器在 `file://` 模式下会限制视频、脚本或资源加载行为。
 
+## 介绍视频
+
+[打开介绍视频](https://github.com/buaa-colalab/colalab-project-page/raw/main/static/videos/project-intro.webm)
+
 ## 文件结构说明
 
 ### `index.html`
