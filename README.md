@@ -1,7 +1,7 @@
 # Project Website
 
 The project website for VGGT-S is available at:
-https://bohaozhang7.github.io/VGGT-S-project-page/
+https://bohaozhang007.github.io/VGGT-S-project-page/
 
 # Acknowledgements
 
